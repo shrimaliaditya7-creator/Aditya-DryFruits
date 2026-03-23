@@ -5,17 +5,25 @@ import {
   signInWithPopup,
   onAuthStateChanged,
   updateProfile,
-  signOut
+  signOut,
+  GoogleAuthProvider
 } from 'firebase/auth'
-import { auth, googleProvider } from '../firebase'
+import { auth } from '../firebase'
 
 const AppContext = createContext()
 
 export const AppProvider = ({ children }) => {
+  // 🔐 Auth state
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // 🎛️ UI state
   const [authModal, setAuthModal] = useState(null)
 
+  // 🛒 Cart state
+  const [cart, setCart] = useState([])
+
+  // 🔄 Track user
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
@@ -24,7 +32,7 @@ export const AppProvider = ({ children }) => {
     return () => unsub()
   }, [])
 
-  // ✅ SIGNUP
+  // 🔐 SIGNUP
   const signupEmail = async (name, email, password) => {
     const res = await createUserWithEmailAndPassword(auth, email, password)
 
@@ -35,46 +43,71 @@ export const AppProvider = ({ children }) => {
     return res.user
   }
 
-  // ✅ LOGIN
+  // 🔐 LOGIN
   const loginEmail = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password)
   }
 
-  // ✅ GOOGLE
+  // 🔐 GOOGLE LOGIN
   const loginGoogle = async () => {
-    return await signInWithPopup(auth, googleProvider)
+    const provider = new GoogleAuthProvider()
+    return await signInWithPopup(auth, provider)
   }
 
-  // ✅ LOGOUT
+  // 🔓 LOGOUT
   const logout = async () => {
     await signOut(auth)
   }
 
-  // UI
+  // 🛒 CART FUNCTIONS
+  const addToCart = (item) => {
+    setCart(prev => [...prev, item])
+  }
+
+  const removeFromCart = (index) => {
+    setCart(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const clearCart = () => {
+    setCart([])
+  }
+
+  // 🎛️ UI FUNCTIONS
   const openAuth = (mode) => setAuthModal(mode)
   const closeAuth = () => setAuthModal(null)
 
   const showToast = (msg) => {
-    alert(msg)
+    alert(msg) // simple for now
   }
 
   return (
     <AppContext.Provider value={{
+      // auth
       user,
       loading,
       signupEmail,
       loginEmail,
       loginGoogle,
       logout,
+
+      // UI
       authModal,
       openAuth,
       closeAuth,
-      showToast
+      showToast,
+
+      // cart
+      cart,
+      addToCart,
+      removeFromCart,
+      clearCart
     }}>
       {children}
     </AppContext.Provider>
   )
 }
 
+// 🔗 Hooks
 export const useAuth = () => useContext(AppContext)
 export const useUI = () => useContext(AppContext)
+export const useCart = () => useContext(AppContext)
