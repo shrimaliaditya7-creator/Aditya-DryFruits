@@ -1,66 +1,59 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signInWithPopup,
-  GoogleAuthProvider,
   onAuthStateChanged,
   updateProfile,
   signOut
 } from 'firebase/auth'
-import { auth } from '../firebase'
+import { auth, googleProvider } from '../firebase'
 
 const AppContext = createContext()
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-
-  // UI state
   const [authModal, setAuthModal] = useState(null)
 
-  // 🔄 Track login state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u)
       setLoading(false)
     })
-    return () => unsubscribe()
+    return () => unsub()
   }, [])
 
-  // 🔐 SIGNUP
+  // ✅ SIGNUP
   const signupEmail = async (name, email, password) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    const res = await createUserWithEmailAndPassword(auth, email, password)
 
-    // Set display name
-    await updateProfile(userCredential.user, {
+    await updateProfile(res.user, {
       displayName: name
     })
 
-    return userCredential.user
+    return res.user
   }
 
-  // 🔐 LOGIN
+  // ✅ LOGIN
   const loginEmail = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password)
   }
 
-  // 🔐 GOOGLE LOGIN
+  // ✅ GOOGLE
   const loginGoogle = async () => {
-    const provider = new GoogleAuthProvider()
-    return await signInWithPopup(auth, provider)
+    return await signInWithPopup(auth, googleProvider)
   }
 
-  // 🔓 LOGOUT
+  // ✅ LOGOUT
   const logout = async () => {
     await signOut(auth)
   }
 
-  // 🎛️ UI controls
+  // UI
   const openAuth = (mode) => setAuthModal(mode)
   const closeAuth = () => setAuthModal(null)
 
-  // 🔔 Simple toast (you can improve later)
   const showToast = (msg) => {
     alert(msg)
   }
@@ -83,6 +76,5 @@ export const AppProvider = ({ children }) => {
   )
 }
 
-// 🔗 Hooks
 export const useAuth = () => useContext(AppContext)
 export const useUI = () => useContext(AppContext)
