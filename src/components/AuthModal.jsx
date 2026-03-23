@@ -14,13 +14,20 @@ export default function AuthModal() {
   const reset = () => { setName(''); setEmail(''); setPass(''); setErr('') }
   const switchMode = mode => { reset(); openAuth(mode) }
 
-  const doLogin = async () => {
-    if (!email || !pass) { setErr('Please fill all fields'); return }
-    setLoading(true); setErr('')
-    try { await loginEmail(email, pass); showToast('Welcome back! 👋'); closeAuth(); reset() }
-    catch { setErr('Invalid email or password. Please try again.') }
-    setLoading(false)
+const doLogin = async () => {
+  if (!email || !pass) { setErr('Please fill all fields'); return }
+  setLoading(true); setErr('')
+  try {
+    await loginEmail(email, pass)
+    showToast('Welcome back! 👋')
+    closeAuth()
+    reset()
+  } catch (e) {
+    console.error(e)
+    setErr(e.message.replace('Firebase: ', '').split('(')[0].trim())
   }
+  setLoading(false)
+}
 
   const doSignup = async () => {
     if (!name || !email || !pass) { setErr('Please fill all fields'); return }
